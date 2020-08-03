@@ -271,6 +271,8 @@ curl 方式安装 docker
 安装
     yum -y install python-pip
     yum -y install docker-compose
+
+
 ```
 
 ### 更改 docker 镜像源(解决安装缦的问题)
@@ -690,4 +692,394 @@ js压缩插件参考资料: https://www.npmjs.com/package/terser-webpack-plugin
 安装
     npm install @vue/cli -g
     npm install @vue/cli-service-global -g
+```
+
+### [vue] 调试技巧
+vue-devtool参考资料: https://github.com/vuejs/vue-devtools
+
+```
+vscode 安装插件 debugger for chrome
+
+Clone this repo
+
+cd vue-devtools the newly created folder
+
+run yarn install
+
+then run yarn run build
+
+Open the Chrome extension page (currently under Menu > More Tools > Extensions)
+Check "developer mode" on the top-right corner
+
+Click the "load unpacked" button on the left, and choose the folder: vue-devtools/packages/shell-chrome/
+
+Alternatilvely to step 3, you can also use yarn dev:chrome to build & watch the unpacked extension
+```
+
+### [nodejs] Koa2
+中文文档: https://koa.bootcss.com/#context
+
+```
+安装:
+    yarn add koa -S
+
+使用:
+    const koa = require('koa')
+    const app = new koa()
+
+    app.use(async ctx => {
+    ctx.body = 'hello world!!'
+    })
+
+    app.listen(3100)
+```
+
+### [koa] 中间件
+```
+koa-router
+koa-body
+@koa/cors
+koa-logger
+koa-json
+```
+
+### [koa] 路由进阶配置 koa-combine-routers
+### [koa] helmet 安全头中间件
+### [koa] koa-static 静态资源文件目录
+```
+// routes/index.js文件
+const combineRouters = require('koa-combine-routers')
+const a = require('./aRoutes')
+const b = require('./bRoutes')
+
+
+module.exports = combineRouters(
+  a,
+  b
+)
+
+// server.js 文件
+const koa = require('koa')
+const app = new koa()
+const router = require('./routes')
+const cors = require('@koa/cors')
+const helmet = require('helmet')
+const koaBody = require('koa-body')
+const static = require('koa-static')
+const path = require('path')
+
+app
+.use(router())
+.use(static(path.resolve(__dirname, '../public')))
+.use(helmet())
+.use(cors())
+.use(koaBody())
+
+
+app.listen(3100, () => {
+  console.log('listen in port 3100')
+})
+```
+
+### [npm版本更新] npm-check-updates
+```
+安装 
+    npm install -g npm-check-updates
+```
+
+### [koa] koa-compose 整合koa中间件
+```
+作用: 对中间件包装整合, 使代码变得整洁
+安装
+    npm install koa-compose -g
+
+import koa from 'koa'
+const app = new koa()
+const router = require('./routes')
+const cors = require('@koa/cors')
+const koaBody = require('koa-body')
+const staticRoot = require('koa-static')
+const path = require('path')
+const compose = require('koa-compose')
+const koaJson = require('koa-json')
+const helmet = require('helmet')
+const compress = require('koa-compress')
+
+const idDevMode = process.env.NODE_ENV === 'production' ? false : true
+
+const middlewares = compose([
+  koaBody(),
+  staticRoot(path.resolve(__dirname, '../public')),
+  cors(),
+  koaJson({ pretty: false, param: 'pretty' }),
+  helmet()
+])
+
+app
+.use(middlewares)
+.use(router())
+
+if (!idDevMode) {
+  app.use(compress())
+}
+
+app.listen(3100, () => {
+  console.log('listen in port 3100')
+})
+```
+
+### [koa] 整合webpack使用es6语法, 热更新
+安装:
+yarn add webpack webpack-cli clean-webpack-plugin webpack-node-externals babel-loader @babel/core @babel/preset-env @babel/node cross-env -D
+
+打包命令:
+```
+npx webpack --config ./config/webpack.config.base.js
+```
+
+nodemon运行命令
+```
+nodemon --exec label-node ./src/index.js
+```
+
+```
+// webpack.config.base.js配置
+
+const path = require('path')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const WebpackNodeExternals = require('webpack-node-externals')
+
+module.exports = {
+  target: 'node',
+  mode: 'development',
+  entry: {
+    server: path.resolve(__dirname, '../src/index.js')
+  },
+  output: {
+    path: path.resolve(__dirname, '../dist'),
+    filename: 'bundle.js'
+  },
+  devtool: 'dev-source-map',
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        use:{
+          loader: 'babel-loader'
+        },
+        exclude: [path.resolve(__dirname, '../node_modules')]
+      }
+    ]
+  },
+  externals: [WebpackNodeExternals()],
+  plugins: [
+    new CleanWebpackPlugin()
+  ],
+  node: {
+    console: true,
+    global: true,
+    process: true,
+    Buffer: true, 
+    __filename: true,
+    __dirname: true,
+    setImmediate: true,
+    path: true
+  }
+}
+```
+
+```
+// .babelrc配置
+
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "current"
+        }
+      }
+    ]
+  ]
+}
+```
+
+### [webpack] development开发环境中的webpack.config.dev.js配置
+webpack.DefinePlugin
+参考资料: https://www.webpackjs.com/plugins/define-plugin/
+```
+plugins: [
+    Webpack.DefinePlugin({
+      "process.env": {
+        NODE_ENV: (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod') ? "'production'" : "'devlopment'"
+      }
+    })
+  ],
+```
+
+### [webpack] webpack-merge 整合开发和生产环境的webpack配置
+```
+参考资料: https://www.npmjs.com/package/webpack-merge
+安装
+    npm intall webpack-merge -D
+```
+
+整合开发环境的webpack配置
+```
+// 整合代码
+const WebpackBaseConfig = require('./webpack.config.base')
+const WebpackMerge = require('webpack-merge')
+
+const WebpackDevConfig = WebpackMerge(WebpackBaseConfig, {
+  mode: 'development',
+  devtool: 'dev-source-map',
+  state: {
+    children: false
+  }
+})
+
+module.exports = WebpackDevConfig
+```
+
+整合生产环境的webpack配置
+```
+terser-webpack-plugin参考资料: https://github.com/webpack-contrib/terser-webpack-plugin
+
+terser-webpack-plugin作用: 压缩js文件
+
+安装:
+    yarn add terser-webpack-plugin -D
+
+整合代码: 
+const WebpackBaseConfig = require('./webpack.config.base')
+const WebpackMerge = require('webpack-merge')
+const TerserWebpackPlugin = require('terser-webpack-plugin')
+const { SplitChunksPlugin } = require('webpack')
+
+
+const WebpackProdConfig = WebpackMerge(WebpackBaseConfig, {
+  mode: 'production',
+  state: { children: false, warnings: false },
+  optimization: {
+    minimizer: [new TerserWebpackPlugin({
+      terserOptions: {
+        warnings: false,
+        compress: {
+          warnings: false,
+          drop_console: false,
+          dead_code: true,
+          drop_debugger: true,
+        },
+        output: {
+          comments: false,
+          beautify: false,
+        },
+        mangle: true,
+      },
+      parallet: true,
+      sourceMap: fasle,
+    })],
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          name: "commons",
+          chunks: "initial",
+          minChunks: 3,
+          enforce: true
+        }
+      }
+    }
+  }
+
+})
+```
+
+### [webpack] 使用splitChunks对terser-webpack-plugin进行优化
+参考资料: https://www.webpackjs.com/plugins/split-chunks-plugin/
+```
+// 官方默认配置
+
+splitChunks: {
+    cacheGroups: {
+    commons: {
+        name: "commons",
+        chunks: "initial",
+        minChunks: 3,
+        enforce: true
+    }
+    }
+}
+```
+
+### [npm] package.json构建/清除脚本命令编写
+需要编写四个脚本命令: 
+```
+安装
+    yarn add rimraf -D
+    yarn add cross-env -D
+
+start命令: 
+    nodemon --exec babel-node ./src/index.js
+
+build命令: 
+    cross-env NODE_ENV=prod webpack --config ./config/webpack.config.prod.js
+
+dev命令:
+    cross-env NODE_ENV=development nodemon --exec babal-node --inspect ./src/index.js
+
+clean命令: 
+    rimraf ./dist
+
+"scripts": {
+    "start": "nodemon --exec babel-node ./src/index.js",
+    "build": "cross-env NODE_ENV=prod webpack --config ./config/webpack.config.prod.js",
+    "dev": "cross-env NODE_ENV=development nodemon --exec babel-node --inspect ./src/index.js",
+    "clean": "rimraf dist"
+  },
+```
+
+### [koa插件] koa-compress 区分生产和开发环境, 对js代码进行压缩
+```
+安装:
+    yarn add koa-compress -D
+
+// src/index.js文件
+const idDevMode = process.env.NODE_ENV === 'production' ? false : true
+if (!idDevMode) {
+  app.use(compress())
+}
+
+```
+
+
+### [nodejs/koa] 注册登录逻辑开发
+layui参考资料: https://www.layui.com/
+
+```
+登录模块需求分析
+登录页面 / 注册页面 / 忘记密码页面
+图形验证码 / NodeMail邮件服务配置
+```
+
+验证码模块开发
+```
+layui-cdn: https://www.layuicdn.com/
+参考资料: https://www.npmjs.com/package/svg-captcha
+
+安装
+    npm i svg-captcha
+
+使用: 
+    svgCaptcha.create(options)
+```
+
+vue表单字段校验工具veevalidate
+```
+参考资料: https://github.com/logaretm/vee-validate
+
+安装:
+    yarn add vee-validate
+
+    
 ```
